@@ -1,0 +1,290 @@
+"""
+Inference script for the Email Triage OpenEnv environment.
+
+Expected environment variables:
+- API_BASE_URL: LLM endpoint, defaults to the Hugging Face router
+- MODEL_NAME: model identifier to query
+- HF_TOKEN: Hugging Face token or compatible API key
+
+The script uses the OpenAI Python client for all LLM calls and falls back to a
+deterministic heuristic baseline when credentials or network access are not
+available.
+"""
+
+import json
+import os
+import sys
+import time
+from collections.abc import Mapping
+from typing import Any
+
+from dotenv import load_dotenv
+from openai import OpenAI
+
+from email_triage_env.environment import EmailTriageEnv
+from email_triage_env.models import Action, EmailCategory, Observation, PriorityLevel
+from email_triage_env.tasks.graders import TaskEvaluator
+
+load_dotenv()
+
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or os.getenv("API_KEY")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Meta-Llama-3.1-8B-Instruct")
+
+TEMPERATURE = 0.2
+MAX_TOKENS = 200
+RUNTIME_LIMIT_SECONDS = 20 * 60
+DEBUG = True
+
+client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY or "missing-api-key")
+
+
+def observation_to_dict(observation: Observation | Mapping[str, Any]) -> dict[str, Any]:
+    """Normalize observations from either Pydantic models or plain dicts."""
+    if isinstance(observation, Observation):
+        return observation.model_dump()
+    if isinstance(observation, Mapping):
+        return dict(observation)
+    raise TypeError(f"Unsupported observation type: {type(observation)!r}")
+
+
+class BaselineAgent:
+    """Simple baseline agent with optional LLM control and heuristic fallback."""
+
+    def __init__(self, use_llm: bool = True):
+        self.use_llm = use_llm and bool(API_KEY)
+
+        self.spam_keywords = ["win", "free", "prize", "congratulations", "click", "offer"]
+        self.work_keywords = [
+            "project",
+            "deadline",
+            "meeting",
+            "team",
+            "report",
+            "client",
+            "review",
+            "hr",
+            "benefits",
+        ]
+        self.high_priority_keywords = [
+            "urgent",
+            "critical",
+            "important",
+            "security",
+            "alert",
+            "deadline",
+            "action required",
+            "final attempt",
+        ]
+        self.medium_priority_keywords = [
+            "meeting",
+            "report",
+            "review",
+            "update",
+            "reminder",
+            "rescheduled",
+            "renewal",
+        ]
+        self.low_priority_keywords = [
+            "no rush",
+            "when you're free",
+            "whenever you're free",
+            "optional",
+            "social event",
+            "bbq",
+            "weekend",
+            "casual friday",
+        ]
+
+    def act(self, observation: Observation | Mapping[str, Any], task_type: str = "easy") -> Action:
+        payload = observation_to_dict(observation)
+        if self.use_llm:
+            return self._llm_act(payload, task_type)
+        return self._heuristic_act(payload, task_type)
+
+    def _heuristic_act(self, observation: dict[str, Any], task_type: str) -> Action:
+        subject = observation["subject"].lower()
+        body = observation["body"].lower()
+        step_count = observation["step_count"]
+        text = f"{subject} {body}"
+
+        if task_type == "easy":
+            return Action(action_type="classify", label=self._pick_category(text))
+
+        if task_type == "medium":
+            return Action(action_type="prioritize", level=self._pick_priority(text))
+
+        if step_count == 0:
+            return Action(action_type="classify", label=self._pick_category(text))
+        if step_count == 1:
+            return Action(action_type="prioritize", level=self._pick_priority(text))
+        return Action(
+            action_type="reply",
+            text="Thanks for the email. I have reviewed it and will follow up if needed.",
+        )
+
+    def _llm_act(self, observation: dict[str, Any], task_type: str) -> Action:
+        try:
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[
+                    {"role": "system", "content": self._system_prompt(task_type)},
+                    {"role": "user", "content": self._build_prompt(observation)},
+                ],
+                temperature=TEMPERATURE,
+                max_tokens=MAX_TOKENS,
+            )
+            action_text = response.choices[0].message.content.strip()
+            return self._parse_action(action_text, task_type)
+        except Exception as exc:
+            if DEBUG:
+                print(f"[WARN] LLM call failed, using heuristics: {exc}")
+            self.use_llm = False
+            return self._heuristic_act(observation, task_type)
+
+    def _pick_category(self, text: str) -> EmailCategory:
+        if any(keyword in text for keyword in self.spam_keywords):
+            return EmailCategory.SPAM
+        if any(keyword in text for keyword in self.work_keywords):
+            return EmailCategory.WORK
+        return EmailCategory.PERSONAL
+
+    def _pick_priority(self, text: str) -> PriorityLevel:
+        if any(keyword in text for keyword in self.low_priority_keywords):
+            return PriorityLevel.LOW
+        if any(keyword in text for keyword in self.high_priority_keywords):
+            return PriorityLevel.HIGH
+        if any(keyword in text for keyword in self.medium_priority_keywords):
+            return PriorityLevel.MEDIUM
+        return PriorityLevel.LOW
+
+    def _system_prompt(self, task_type: str) -> str:
+        if task_type == "easy":
+            return (
+                "You classify emails as spam, work, or personal. "
+                "Reply with exactly one action like classify(label=\"work\")."
+            )
+        if task_type == "medium":
+            return (
+                "You assign email priority as low, medium, or high. "
+                "Reply with exactly one action like prioritize(level=\"high\")."
+            )
+        return (
+            "You triage emails step by step. First classify, then prioritize, "
+            "then optionally reply. Reply with exactly one action string."
+        )
+
+    def _build_prompt(self, observation: dict[str, Any]) -> str:
+        prompt = (
+            f"Email ID: {observation['email_id']}\n"
+            f"Subject: {observation['subject']}\n"
+            f"Body: {observation['body']}\n"
+            f"Step: {observation['step_count'] + 1}\n"
+        )
+        history = observation.get("history") or []
+        if history:
+            prompt += "\nPrevious actions:\n"
+            for action in history:
+                prompt += f"- {action}\n"
+        prompt += "\nWhat action should I take?"
+        return prompt
+
+    def _parse_action(self, action_text: str, task_type: str) -> Action:
+        lowered = action_text.lower().strip()
+
+        if "classify" in lowered:
+            if "spam" in lowered:
+                return Action(action_type="classify", label=EmailCategory.SPAM)
+            if "work" in lowered:
+                return Action(action_type="classify", label=EmailCategory.WORK)
+            return Action(action_type="classify", label=EmailCategory.PERSONAL)
+
+        if "prioritize" in lowered:
+            if "high" in lowered:
+                return Action(action_type="prioritize", level=PriorityLevel.HIGH)
+            if "medium" in lowered:
+                return Action(action_type="prioritize", level=PriorityLevel.MEDIUM)
+            return Action(action_type="prioritize", level=PriorityLevel.LOW)
+
+        if "reply" in lowered:
+            start = action_text.find('"')
+            end = action_text.rfind('"')
+            reply_text = action_text[start + 1 : end] if start != -1 and end > start else "Acknowledged."
+            return Action(action_type="reply", text=reply_text)
+
+        if task_type == "medium":
+            return Action(action_type="prioritize", level=PriorityLevel.MEDIUM)
+        return Action(action_type="classify", label=EmailCategory.PERSONAL)
+
+
+def run_baseline_evaluation() -> dict[str, Any]:
+    """Run the baseline on all tasks and persist a JSON summary."""
+    print("=" * 60)
+    print("Email Triage OpenEnv - Baseline Evaluation")
+    print("=" * 60)
+
+    env = EmailTriageEnv()
+    agent = BaselineAgent(use_llm=True)
+    evaluator = TaskEvaluator()
+
+    if not API_KEY:
+        print("No API key provided. Using heuristic baseline only.")
+        agent.use_llm = False
+    else:
+        try:
+            client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[{"role": "user", "content": "test"}],
+                max_tokens=1,
+            )
+            print(f"[OK] LLM connected: {MODEL_NAME}")
+        except Exception as exc:
+            print(f"[WARN] LLM connection failed: {exc}")
+            print("Falling back to heuristic baseline.")
+            agent.use_llm = False
+
+    start_time = time.time()
+    results = evaluator.evaluate_all_tasks(
+        env,
+        agent,
+        seeds={"easy": 42, "medium": 43, "hard": 44},
+    )
+    elapsed_time = time.time() - start_time
+
+    print("\n" + "=" * 60)
+    print("EVALUATION RESULTS")
+    print("=" * 60)
+    for task_type in ["easy", "medium", "hard"]:
+        task_result = results["task_results"][task_type]
+        print(f"\n{task_type.upper()} TASK:")
+        print(f"  Score: {task_result['score']:.3f}")
+        print(f"  Total Reward: {task_result['total_reward']:.3f}")
+        print(f"  Steps: {task_result['steps_taken']}/{task_result['max_steps']}")
+        print(f"  Classification Correct: {task_result['classification_correct']}")
+        print(f"  Priority Correct: {task_result['priority_correct']}")
+
+    print("\n" + "=" * 60)
+    print(f"Average Score: {results['average_score']:.3f}")
+    print(f"Total Time: {elapsed_time:.2f} seconds")
+    print("=" * 60)
+
+    with open("baseline_results.json", "w", encoding="utf-8") as handle:
+        json.dump(results, handle, indent=2, default=str)
+
+    print("\nResults saved to: baseline_results.json")
+    if elapsed_time > RUNTIME_LIMIT_SECONDS:
+        print(f"[WARN] Runtime ({elapsed_time:.2f}s) exceeds 20 minute limit.")
+    else:
+        print(f"[OK] Runtime ({elapsed_time:.2f}s) within 20 minute limit.")
+
+    return results
+
+
+if __name__ == "__main__":
+    if not MODEL_NAME:
+        print("ERROR: MODEL_NAME environment variable not set!")
+        sys.exit(1)
+
+    print(f"API Base URL: {API_BASE_URL}")
+    print(f"Model: {MODEL_NAME}")
+    run_baseline_evaluation()
