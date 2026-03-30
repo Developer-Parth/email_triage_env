@@ -3,7 +3,7 @@
 from typing import Any, Dict
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException
 from pydantic import BaseModel
 
 from .environment import EmailTriageEnv
@@ -40,7 +40,7 @@ class OpenEnvServer:
         """Setup OpenEnv API routes."""
         
         @self.app.post("/reset")
-        async def reset(reset_request: ResetRequest | None = None):
+        async def reset(reset_request: ResetRequest | None = Body(default=None)):
             """Reset the environment and start a new episode."""
             try:
                 reset_request = reset_request or ResetRequest()
