@@ -1,6 +1,18 @@
+---
+title: Email Triage OpenEnv
+emoji: 📬
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+pinned: false
+license: mit
+short_description: OpenEnv benchmark for multi-step email triage
+---
+
 # Email Triage OpenEnv Environment
 
-An OpenEnv benchmark for a real-world productivity task: triaging incoming email. The environment evaluates whether an agent can read an email, classify it, assign the right priority, and handle multi-step decision making under ambiguity.
+An OpenEnv benchmark for a real-world productivity task: triaging incoming email. The environment evaluates whether an agent can read email content, classify it, assign the right priority, and handle multi-step decisions under ambiguity.
 
 ## Overview
 
@@ -175,8 +187,6 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-If you already have the bundled virtual environment, you can use it directly.
-
 ## Local Usage
 
 ### Run the baseline environment scripts
@@ -198,18 +208,6 @@ or:
 
 ```bash
 .venv\Scripts\python.exe -m server.app
-```
-
-### Example API calls
-
-```bash
-curl -X POST http://127.0.0.1:8000/reset ^
-  -H "Content-Type: application/json" ^
-  -d "{\"task\":\"easy\",\"seed\":42}"
-
-curl -X POST http://127.0.0.1:8000/step ^
-  -H "Content-Type: application/json" ^
-  -d "{\"action\":{\"action_type\":\"classify\",\"label\":\"work\"}}"
 ```
 
 ## Baseline Inference
@@ -238,15 +236,8 @@ Behavior:
 
 ## Validation
 
-From the repository root:
-
 ```bash
 .venv\Scripts\openenv.exe validate
-```
-
-Additional checks:
-
-```bash
 .venv\Scripts\python.exe test_opnenv_validation.py
 .venv\Scripts\python.exe demo_benchmark.py
 ```
@@ -259,10 +250,6 @@ Build and run:
 docker build -t email-triage-openenv .
 docker run -p 8000:8000 email-triage-openenv
 ```
-
-Note:
-
-- Docker Desktop or another Docker daemon must be running for these commands to succeed.
 
 ## Hugging Face Spaces
 
@@ -295,4 +282,4 @@ Possible next steps:
 
 ## License
 
-MIT. See [LICENSE](/c:/Users/Admin/Hackathons/Scaler%20March%202026/LICENSE).
+MIT.
