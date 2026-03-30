@@ -40,9 +40,10 @@ class OpenEnvServer:
         """Setup OpenEnv API routes."""
         
         @self.app.post("/reset")
-        async def reset(reset_request: ResetRequest):
+        async def reset(reset_request: ResetRequest | None = None):
             """Reset the environment and start a new episode."""
             try:
+                reset_request = reset_request or ResetRequest()
                 self.current_task = reset_request.task
                 self.env = EmailTriageEnv(
                     task_type=reset_request.task,
