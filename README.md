@@ -30,14 +30,16 @@ A benchmark environment for evaluating LLM agents on multi-step email triage tas
 - structured actions and observations
 - reward-based learning signals
 - deterministic grading (0.0–1.0)
-- deployable via Docker (Hugging Face Spaces)
+- deployable via Docker on Hugging Face Spaces
 - fully OpenEnv compliant
 
 ---
 
 > Designed to evaluate multi-step reasoning and decision consistency in LLM agents under real-world ambiguity.
+>
+> Suitable for benchmarking agent performance, reward shaping strategies, and decision consistency under constrained interaction loops.
 
-An OpenEnv benchmark for a real-world productivity task: triaging incoming email. The environment evaluates whether an agent can read email content, classify it, assign the right priority, and handle multi-step decisions under ambiguity.
+This environment models a real-world productivity task: triaging incoming email. It evaluates whether an agent can read content, classify it, assign priority, and handle multi-step decisions under ambiguity.
 
 ## Overview
 
