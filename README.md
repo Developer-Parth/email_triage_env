@@ -10,7 +10,7 @@ license: mit
 short_description: OpenEnv benchmark for multi-step email triage
 ---
 
-# Email Triage OpenEnv Environment
+# Email Triage OpenEnv Benchmark
 
 ## 🚀 Scaler March 2026 Hackathon Submission
 
@@ -34,6 +34,8 @@ A benchmark environment for evaluating LLM agents on multi-step email triage tas
 - fully OpenEnv compliant
 
 ---
+
+> Designed to evaluate multi-step reasoning and decision consistency in LLM agents under real-world ambiguity.
 
 An OpenEnv benchmark for a real-world productivity task: triaging incoming email. The environment evaluates whether an agent can read email content, classify it, assign the right priority, and handle multi-step decisions under ambiguity.
 
@@ -267,6 +269,8 @@ Behavior:
 
 ## 🔌 API Usage
 
+All endpoints are OpenEnv-compatible and return structured JSON responses.
+
 ### Health Check
 GET /health
 
@@ -311,6 +315,8 @@ This repo is structured for Docker-based deployment to Hugging Face Spaces.
 Recommended setup:
 
 - SDK: `Docker`
+- hardware: CPU Basic is sufficient
+- set `API_BASE_URL`, `MODEL_NAME`, and `HF_TOKEN` in Space secrets if you want the LLM baseline enabled
 
 ## 🏁 Submission Status
 
@@ -324,8 +330,11 @@ This environment:
 Built, debugged, and deployed under hackathon constraints.
 
 ---
-- hardware: CPU Basic is sufficient
-- set `API_BASE_URL`, `MODEL_NAME`, and `HF_TOKEN` in Space secrets if you want the LLM baseline enabled
+
+## 🔗 Links
+
+- GitHub Repository: https://github.com/Developer-Parth/email_triage_env
+- Hugging Face Space: https://huggingface.co/spaces/Developer-Parth/email_triage_env
 
 ## Why This Environment Fits The Problem Statement
 
