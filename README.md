@@ -12,6 +12,29 @@ short_description: OpenEnv benchmark for multi-step email triage
 
 # Email Triage OpenEnv Environment
 
+## 🚀 Scaler March 2026 Hackathon Submission
+
+This project was built as part of the **Scaler March 2026 Hackathon**.
+
+**Author:** Parth Thukral  
+**Type:** OpenEnv Benchmark Environment  
+**Focus:** Evaluating LLM agents on multi-step decision-making tasks
+
+---
+
+## ⚡ TL;DR
+
+A benchmark environment for evaluating LLM agents on multi-step email triage tasks.
+
+- 3 tasks (easy → medium → hard)
+- structured actions and observations
+- reward-based learning signals
+- deterministic grading (0.0–1.0)
+- deployable via Docker (Hugging Face Spaces)
+- fully OpenEnv compliant
+
+---
+
 An OpenEnv benchmark for a real-world productivity task: triaging incoming email. The environment evaluates whether an agent can read email content, classify it, assign the right priority, and handle multi-step decisions under ambiguity.
 
 ## Overview
@@ -242,6 +265,36 @@ Behavior:
 .venv\Scripts\python.exe demo_benchmark.py
 ```
 
+## 🔌 API Usage
+
+### Health Check
+GET /health
+
+### Reset Environment
+POST /reset  
+Optional body:
+```json
+{"task": "easy", "seed": 42}
+```
+
+### Take Step
+
+POST /step
+Body:
+
+```json
+{
+  "action": {
+    "action_type": "classify",
+    "label": "personal"
+  }
+}
+```
+
+### Get State
+
+GET /state
+
 ## Docker
 
 Build and run:
@@ -258,6 +311,19 @@ This repo is structured for Docker-based deployment to Hugging Face Spaces.
 Recommended setup:
 
 - SDK: `Docker`
+
+## 🏁 Submission Status
+
+This environment:
+
+- passes OpenEnv validation
+- successfully deploys via Docker on Hugging Face Spaces
+- supports full agent interaction through API endpoints
+- was tested end-to-end including inference and grading pipeline
+
+Built, debugged, and deployed under hackathon constraints.
+
+---
 - hardware: CPU Basic is sufficient
 - set `API_BASE_URL`, `MODEL_NAME`, and `HF_TOKEN` in Space secrets if you want the LLM baseline enabled
 
