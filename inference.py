@@ -219,16 +219,18 @@ class BaselineAgent:
 
 def run_baseline_evaluation() -> dict[str, Any]:
     """Run the baseline on all tasks and persist a JSON summary."""
-    print("=" * 60)
-    print("Email Triage OpenEnv - Baseline Evaluation")
-    print("=" * 60)
+    # Diagnostic output to stderr to keep stdout clean for validator
+    import sys
+    print("=" * 60, file=sys.stderr)
+    print("Email Triage OpenEnv - Baseline Evaluation", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
 
     env = EmailTriageEnv()
     agent = BaselineAgent(use_llm=True)
     evaluator = TaskEvaluator()
 
     if not API_KEY:
-        print("No API key provided. Using heuristic baseline only.")
+        print("No API key provided. Using heuristic baseline only.", file=sys.stderr)
         agent.use_llm = False
     else:
         try:
@@ -237,10 +239,10 @@ def run_baseline_evaluation() -> dict[str, Any]:
                 messages=[{"role": "user", "content": "test"}],
                 max_tokens=1,
             )
-            print(f"[OK] LLM connected: {MODEL_NAME}")
+            print(f"[OK] LLM connected: {MODEL_NAME}", file=sys.stderr)
         except Exception as exc:
-            print(f"[WARN] LLM connection failed: {exc}")
-            print("Falling back to heuristic baseline.")
+            print(f"[WARN] LLM connection failed: {exc}", file=sys.stderr)
+            print("Falling back to heuristic baseline.", file=sys.stderr)
             agent.use_llm = False
 
     start_time = time.time()
@@ -332,40 +334,43 @@ def run_baseline_evaluation() -> dict[str, Any]:
     
     elapsed_time = time.time() - start_time
 
-    print("\n" + "=" * 60)
-    print("EVALUATION RESULTS")
-    print("=" * 60)
+    # Diagnostic output to stderr
+    import sys
+    print("\n" + "=" * 60, file=sys.stderr)
+    print("EVALUATION RESULTS", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
     for task_type in ["easy", "medium", "hard"]:
         task_result = results["task_results"][task_type]
-        print(f"\n{task_type.upper()} TASK:")
-        print(f"  Score: {task_result['score']:.3f}")
-        print(f"  Total Reward: {task_result['total_reward']:.3f}")
-        print(f"  Steps: {task_result['steps_taken']}/{task_result['max_steps']}")
-        print(f"  Classification Correct: {task_result['classification_correct']}")
-        print(f"  Priority Correct: {task_result['priority_correct']}")
+        print(f"\n{task_type.upper()} TASK:", file=sys.stderr)
+        print(f"  Score: {task_result['score']:.3f}", file=sys.stderr)
+        print(f"  Total Reward: {task_result['total_reward']:.3f}", file=sys.stderr)
+        print(f"  Steps: {task_result['steps_taken']}/{task_result['max_steps']}", file=sys.stderr)
+        print(f"  Classification Correct: {task_result['classification_correct']}", file=sys.stderr)
+        print(f"  Priority Correct: {task_result['priority_correct']}", file=sys.stderr)
 
-    print("\n" + "=" * 60)
-    print(f"Average Score: {results['average_score']:.3f}")
-    print(f"Total Time: {elapsed_time:.2f} seconds")
-    print("=" * 60)
+    print("\n" + "=" * 60, file=sys.stderr)
+    print(f"Average Score: {results['average_score']:.3f}", file=sys.stderr)
+    print(f"Total Time: {elapsed_time:.2f} seconds", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
 
     with open("baseline_results.json", "w", encoding="utf-8") as handle:
         json.dump(results, handle, indent=2, default=str)
 
-    print("\nResults saved to: baseline_results.json")
+    print("\nResults saved to: baseline_results.json", file=sys.stderr)
     if elapsed_time > RUNTIME_LIMIT_SECONDS:
-        print(f"[WARN] Runtime ({elapsed_time:.2f}s) exceeds 20 minute limit.")
+        print(f"[WARN] Runtime ({elapsed_time:.2f}s) exceeds 20 minute limit.", file=sys.stderr)
     else:
-        print(f"[OK] Runtime ({elapsed_time:.2f}s) within 20 minute limit.")
+        print(f"[OK] Runtime ({elapsed_time:.2f}s) within 20 minute limit.", file=sys.stderr)
 
     return results
 
 
 if __name__ == "__main__":
+    import sys
     if not MODEL_NAME:
-        print("ERROR: MODEL_NAME environment variable not set!")
+        print("ERROR: MODEL_NAME environment variable not set!", file=sys.stderr)
         sys.exit(1)
 
-    print(f"API Base URL: {API_BASE_URL}")
-    print(f"Model: {MODEL_NAME}")
+    print(f"API Base URL: {API_BASE_URL}", file=sys.stderr)
+    print(f"Model: {MODEL_NAME}", file=sys.stderr)
     run_baseline_evaluation()
