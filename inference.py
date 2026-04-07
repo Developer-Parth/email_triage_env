@@ -23,7 +23,7 @@ from openai import OpenAI
 
 from email_triage_env.environment import EmailTriageEnv
 from email_triage_env.models import Action, EmailCategory, Observation, PriorityLevel
-from email_triage_env.tasks.graders import TaskEvaluator
+from email_triage_env.tasks.graders import TaskEvaluator, EpisodeResult
 
 load_dotenv()
 
@@ -250,7 +250,7 @@ def run_baseline_evaluation() -> dict[str, Any]:
     task_results = {}
     
     for task_type in ["easy", "medium", "hard"]:
-        print(f"\n[START] Task: {task_type.upper()}")
+        print(f"[START] task={task_type}", flush=True)
         
         # Reset environment with task type
         env.task_type = task_type
@@ -276,7 +276,7 @@ def run_baseline_evaluation() -> dict[str, Any]:
             steps += 1
             
             # Output step information
-            print(f"[STEP] Step {steps}: Action={action.model_dump()}, Reward={reward.total:.3f}, Done={done}")
+            print(f"[STEP] step={steps} reward={reward.total:.3f}", flush=True)
             
             # Check if actions were correct
             if info.get("is_classified"):
@@ -286,8 +286,6 @@ def run_baseline_evaluation() -> dict[str, Any]:
             if info.get("is_prioritized"):
                 if reward.priority and reward.priority > 0:
                     priority_correct = True
-        
-        print(f"[END] Task: {task_type.upper()}, Steps: {steps}, Total Reward: {total_reward:.3f}")
         
         # Get score from grader
         grader = evaluator.graders[task_type]
@@ -308,6 +306,8 @@ def run_baseline_evaluation() -> dict[str, Any]:
         )
         
         score = grader.grade(episode_result)
+        
+        print(f"[END] task={task_type} score={score:.1f} steps={steps}", flush=True)
         
         task_results[task_type] = {
             "task_type": task_type,
