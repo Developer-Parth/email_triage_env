@@ -309,6 +309,12 @@ def run_baseline_evaluation() -> dict[str, Any]:
         
         score = grader.grade(episode_result)
         
+        # Clamp score strictly between 0 and 1 for validator requirements
+        if score >= 1.0:
+            score = 0.999
+        elif score <= 0.0:
+            score = 0.001
+        
         print(f"[END] task={task_type} score={score:.1f} steps={steps}", flush=True)
         
         task_results[task_type] = {

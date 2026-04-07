@@ -52,16 +52,17 @@ class EasyTaskGrader(BaseGrader):
     def grade(self, episode_result: EpisodeResult) -> float:
         """
         Score = 1.0 if classification is correct, else 0.0
+        Clamped to be strictly between 0 and 1 for validator requirements.
         
         Args:
             episode_result: Must contain classification_correct field
             
         Returns:
-            1.0 if correct classification, 0.0 otherwise
+            0.999 if correct classification, 0.001 otherwise
         """
         if episode_result.classification_correct:
-            return 1.0
-        return 0.0
+            return 0.999
+        return 0.001
 
 
 class MediumTaskGrader(BaseGrader):
@@ -73,16 +74,17 @@ class MediumTaskGrader(BaseGrader):
     def grade(self, episode_result: EpisodeResult) -> float:
         """
         Score = 1.0 if priority is correct, else 0.0
+        Clamped to be strictly between 0 and 1 for validator requirements.
         
         Args:
             episode_result: Must contain priority_correct field
             
         Returns:
-            1.0 if correct priority, 0.0 otherwise
+            0.999 if correct priority, 0.001 otherwise
         """
         if episode_result.priority_correct:
-            return 1.0
-        return 0.0
+            return 0.999
+        return 0.001
 
 
 class HardTaskGrader(BaseGrader):
@@ -98,18 +100,26 @@ class HardTaskGrader(BaseGrader):
         - Priority: 0.4 weight
         
         Final score = (0.6 × classification correctness) + (0.4 × priority correctness)
+        Clamped to be strictly between 0 and 1 for validator requirements.
         
         Args:
             episode_result: Must contain classification_correct and priority_correct fields
             
         Returns:
-            Weighted score between 0.0 and 1.0
+            Weighted score strictly between 0.0 and 1.0
         """
         classification_score = 1.0 if episode_result.classification_correct else 0.0
         priority_score = 1.0 if episode_result.priority_correct else 0.0
         
         weighted_score = (0.6 * classification_score) + (0.4 * priority_score)
-        return weighted_score
+        
+        # Clamp to strictly between 0 and 1 for validator requirements
+        if weighted_score >= 1.0:
+            return 0.999
+        elif weighted_score <= 0.0:
+            return 0.001
+        else:
+            return weighted_score
 
 
 class TaskEvaluator:
