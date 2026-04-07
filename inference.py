@@ -244,11 +244,92 @@ def run_baseline_evaluation() -> dict[str, Any]:
             agent.use_llm = False
 
     start_time = time.time()
-    results = evaluator.evaluate_all_tasks(
-        env,
-        agent,
-        seeds={"easy": 42, "medium": 43, "hard": 44},
-    )
+    
+    # We'll manually evaluate each task to output [START]/[STEP]/[END] blocks
+    results = {}
+    task_results = {}
+    
+    for task_type in ["easy", "medium", "hard"]:
+        print(f"\n[START] Task: {task_type.upper()}")
+        
+        # Reset environment with task type
+        env.task_type = task_type
+        observation = env.reset(seed={"easy": 42, "medium": 43, "hard": 44}[task_type])
+        
+        done = False
+        total_reward = 0.0
+        steps = 0
+        
+        # Track correctness
+        classification_correct = False
+        priority_correct = False
+        
+        while not done and steps < env.max_steps:
+            # Get action from agent
+            action = agent.act(observation, task_type)
+            
+            # Execute action
+            observation, reward, done, info = env.step(action)
+            
+            # Update tracking
+            total_reward += reward.total
+            steps += 1
+            
+            # Output step information
+            print(f"[STEP] Step {steps}: Action={action.model_dump()}, Reward={reward.total:.3f}, Done={done}")
+            
+            # Check if actions were correct
+            if info.get("is_classified"):
+                if reward.classification and reward.classification > 0:
+                    classification_correct = True
+            
+            if info.get("is_prioritized"):
+                if reward.priority and reward.priority > 0:
+                    priority_correct = True
+        
+        print(f"[END] Task: {task_type.upper()}, Steps: {steps}, Total Reward: {total_reward:.3f}")
+        
+        # Get score from grader
+        grader = evaluator.graders[task_type]
+        
+        # Create episode result
+        state = env.state()
+        episode_result = EpisodeResult(
+            task_type=task_type,
+            total_reward=total_reward,
+            steps_taken=steps,
+            max_steps=env.max_steps,
+            is_classified=state.is_classified if state else False,
+            is_prioritized=state.is_prioritized if state else False,
+            is_replied=state.is_replied if state and task_type == "hard" else None,
+            classification_correct=classification_correct,
+            priority_correct=priority_correct,
+            action_history=state.action_history if state else []
+        )
+        
+        score = grader.grade(episode_result)
+        
+        task_results[task_type] = {
+            "task_type": task_type,
+            "score": score,
+            "total_reward": total_reward,
+            "steps_taken": steps,
+            "max_steps": env.max_steps,
+            "classification_correct": classification_correct,
+            "priority_correct": priority_correct,
+            "episode_result": episode_result
+        }
+    
+    # Calculate average score
+    scores = [task_results[task]["score"] for task in task_results]
+    avg_score = sum(scores) / len(scores) if scores else 0.0
+    
+    results = {
+        "task_results": task_results,
+        "average_score": avg_score,
+        "timestamp": time.time()
+    }
+    
     elapsed_time = time.time() - start_time
 
     print("\n" + "=" * 60)

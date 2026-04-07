@@ -141,6 +141,8 @@ Full triage.
 
 ## Reward Design
 
+**Summary:** Correct behavior yields positive reward (~1.0), random strategies are penalized (negative reward), ensuring meaningful learning signals.
+
 The benchmark uses dense, shaped rewards so agents receive signal across the full trajectory instead of only at episode end.
 
 Core components:
