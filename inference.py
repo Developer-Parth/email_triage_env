@@ -34,7 +34,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Meta-Llama-3.1-8B-Instruct")
 TEMPERATURE = 0.2
 MAX_TOKENS = 200
 RUNTIME_LIMIT_SECONDS = 20 * 60
-DEBUG = True
+DEBUG = False
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY or "missing-api-key")
 
@@ -138,7 +138,7 @@ class BaselineAgent:
             return self._parse_action(action_text, task_type)
         except Exception as exc:
             if DEBUG:
-                print(f"[WARN] LLM call failed, using heuristics: {exc}")
+                print(f"[WARN] LLM call failed, using heuristics: {exc}", file=sys.stderr)
             self.use_llm = False
             return self._heuristic_act(observation, task_type)
 
