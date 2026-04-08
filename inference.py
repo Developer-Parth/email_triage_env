@@ -248,20 +248,24 @@ def run_task(task_type: str, seed: int) -> float:
             score = 0.000001
             
     except Exception as e:
-        # On any error, use minimum score and current step count
+        # On any error, use minimum score
         score = 0.000001
-        steps = steps if steps > 0 else 1
+        # Keep actual steps taken (could be 0 if error occurred before any step)
         # Error details go to stderr, not stdout
         print(f"Error in task {task_type}: {e}", file=sys.stderr)
-        # If we have partial rewards, use them
-        if not step_rewards:
-            step_rewards = [0.00]
+        # If we have no rewards (error before any step), step_rewards is already empty list
     
     # Format rewards as comma-separated list with 2 decimal places
     rewards_str = ",".join(f"{r:.2f}" for r in step_rewards)
     
-    # Determine success (true if score > 0.5, false otherwise)
-    success = "true" if score > 0.5 else "false"
+    # Determine success based on task completion
+    if task_type == "easy":
+        success = "true" if classification_correct else "false"
+    elif task_type == "medium":
+        success = "true" if priority_correct else "false"
+    else:  # hard
+        # For hard task, success if both classification and priority are correct
+        success = "true" if (classification_correct and priority_correct) else "false"
     
     # ALWAYS print [END] even on errors
     print(f"[END] success={success} steps={steps} rewards={rewards_str}", flush=True)
