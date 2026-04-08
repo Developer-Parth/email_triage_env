@@ -361,4 +361,4 @@ Possible next steps:
 
 ## License
 
-MIT.
+[MIT](https://github.com/Developer-Parth/email_triage_env/blob/main/LICENSE)
