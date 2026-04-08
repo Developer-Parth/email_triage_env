@@ -256,7 +256,10 @@ def run_task(task_type: str, seed: int) -> float:
         # If we have no rewards (error before any step), step_rewards is already empty list
     finally:
         # ALWAYS close the environment before emitting [END]
-        env.close()
+        try:
+            env.close()
+        except Exception as close_error:
+            print(f"Error closing environment for task {task_type}: {close_error}", file=sys.stderr)
     
     # Format rewards as comma-separated list with 2 decimal places
     rewards_str = ",".join(f"{r:.2f}" for r in step_rewards)
@@ -271,8 +274,7 @@ def run_task(task_type: str, seed: int) -> float:
         success = "true" if (classification_correct and priority_correct) else "false"
     
     # ALWAYS print [END] even on errors
-    # Format score with 6 decimal places to avoid rounding to 1.000000
-    print(f"[END] success={success} steps={steps} rewards={rewards_str} score={score:.6f}", flush=True)
+    print(f"[END] success={success} steps={steps} rewards={rewards_str}", flush=True)
     
     return score
 
