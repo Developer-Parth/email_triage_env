@@ -108,18 +108,16 @@ class HardTaskGrader(BaseGrader):
         Returns:
             Weighted score strictly between 0.0 and 1.0
         """
-        classification_score = 1.0 if episode_result.classification_correct else 0.0
-        priority_score = 1.0 if episode_result.priority_correct else 0.0
+        # Use 0.999 for correct, 0.001 for incorrect to ensure scores are strictly between 0 and 1
+        classification_score = 0.999 if episode_result.classification_correct else 0.001
+        priority_score = 0.999 if episode_result.priority_correct else 0.001
         
         weighted_score = (0.6 * classification_score) + (0.4 * priority_score)
         
-        # Clamp to strictly between 0 and 1 for validator requirements
-        if weighted_score >= 1.0:
-            return 0.999
-        elif weighted_score <= 0.0:
-            return 0.001
-        else:
-            return weighted_score
+        # Final clamp to ensure strictly between 0 and 1
+        # Use max(min(score, 0.999), 1e-6) for consistency with other graders
+        weighted_score = max(min(weighted_score, 0.999), 1e-6)
+        return weighted_score
 
 
 class TaskEvaluator:
