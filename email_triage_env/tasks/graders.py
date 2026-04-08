@@ -58,11 +58,11 @@ class EasyTaskGrader(BaseGrader):
             episode_result: Must contain classification_correct field
             
         Returns:
-            0.999 if correct classification, 0.001 otherwise
+            0.999999 if correct classification, 0.000001 otherwise
         """
         if episode_result.classification_correct:
-            return 0.999
-        return 0.001
+            return 0.999999
+        return 0.000001
 
 
 class MediumTaskGrader(BaseGrader):
@@ -80,11 +80,11 @@ class MediumTaskGrader(BaseGrader):
             episode_result: Must contain priority_correct field
             
         Returns:
-            0.999 if correct priority, 0.001 otherwise
+            0.999999 if correct priority, 0.000001 otherwise
         """
         if episode_result.priority_correct:
-            return 0.999
-        return 0.001
+            return 0.999999
+        return 0.000001
 
 
 class HardTaskGrader(BaseGrader):
@@ -108,15 +108,15 @@ class HardTaskGrader(BaseGrader):
         Returns:
             Weighted score strictly between 0.0 and 1.0
         """
-        # Use 0.999 for correct, 0.001 for incorrect to ensure scores are strictly between 0 and 1
-        classification_score = 0.999 if episode_result.classification_correct else 0.001
-        priority_score = 0.999 if episode_result.priority_correct else 0.001
+        # Use 0.999999 for correct, 0.000001 for incorrect to ensure scores are strictly between 0 and 1
+        classification_score = 0.999999 if episode_result.classification_correct else 0.000001
+        priority_score = 0.999999 if episode_result.priority_correct else 0.000001
         
         weighted_score = (0.6 * classification_score) + (0.4 * priority_score)
         
         # Final clamp to ensure strictly between 0 and 1
-        # Use max(min(score, 0.999), 1e-6) for consistency with other graders
-        weighted_score = max(min(weighted_score, 0.999), 1e-6)
+        # Use max(min(score, 0.999999), 1e-6) for consistency with other graders
+        weighted_score = max(min(weighted_score, 0.999999), 1e-6)
         return weighted_score
 
 

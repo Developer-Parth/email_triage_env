@@ -310,9 +310,16 @@ def run_baseline_evaluation() -> dict[str, Any]:
         score = grader.grade(episode_result)
         
         # FINAL clamp (authoritative) - ensure strictly between 0 and 1
-        # Use 0.999 as max, 1e-6 as min to avoid floating point issues
-        score = max(min(score, 0.999), 1e-6)
+        # Use 0.999999 as max, 1e-6 as min to avoid floating point issues
+        score = max(min(score, 0.999999), 1e-6)
         
+        # Nuclear fix: Prevent any rounding to 1.000000 or 0.000000
+        # If score is too close to 1.0, force it down
+        if score >= 0.999999:
+            score = 0.999999
+        if score <= 1e-6:
+            score = 1e-6
+            
         # Format with sufficient precision to avoid rounding to 1.0 or 0.0
         print(f"[END] task={task_type} score={score:.6f} steps={steps}", flush=True)
         
@@ -332,7 +339,13 @@ def run_baseline_evaluation() -> dict[str, Any]:
     avg_score = sum(scores) / len(scores) if scores else 0.0
     
     # Clamp average score as well to be strictly between 0 and 1
-    avg_score = max(min(avg_score, 0.999), 1e-6)
+    avg_score = max(min(avg_score, 0.999999), 1e-6)
+    
+    # Nuclear fix: Prevent any rounding to 1.000000 or 0.000000
+    if avg_score >= 0.999999:
+        avg_score = 0.999999
+    if avg_score <= 1e-6:
+        avg_score = 1e-6
     
     results = {
         "task_results": task_results,
