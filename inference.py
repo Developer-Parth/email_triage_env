@@ -254,6 +254,9 @@ def run_task(task_type: str, seed: int) -> float:
         # Error details go to stderr, not stdout
         print(f"Error in task {task_type}: {e}", file=sys.stderr)
         # If we have no rewards (error before any step), step_rewards is already empty list
+    finally:
+        # ALWAYS close the environment before emitting [END]
+        env.close()
     
     # Format rewards as comma-separated list with 2 decimal places
     rewards_str = ",".join(f"{r:.2f}" for r in step_rewards)

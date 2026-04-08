@@ -869,3 +869,8 @@ class EmailTriageEnv:
     def get_current_email(self) -> Optional[Dict[str, Any]]:
         """Get the current email data (for debugging)."""
         return self._current_email
+    
+    def close(self) -> None:
+        """Close the environment (required by OpenEnv interface)."""
+        # No resources to clean up in this simple environment
+        pass
