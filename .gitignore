@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *.log
+*output*.txt
+final_check.txt
+verification_output.txt
 baseline_results.json
 .pytest_cache/
 .mypy_cache/
