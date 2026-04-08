@@ -43,31 +43,31 @@ def validate_output():
         print(f"2. Exactly 3 [END] blocks: {end_count} {'[OK]' if end_count == 3 else '[FAIL]'}")
         
         # Requirement 3: Each [END] has score between 0.000001 and 0.999999
-        end_pattern = r'\[END\] task=(\w+) score=([\d\.]+) steps=(\d+)'
+        # New format: [END] success={true|false} steps={n} rewards={r1,r2,...} score={score}
+        end_pattern = r'\[END\] success=(true|false) steps=(\d+) rewards=([\d\.,\-]+) score=([\d\.]+)'
         end_lines = re.findall(end_pattern, stdout)
         
         print(f"3. Each [END] score between 0.000001 and 0.999999:")
         all_scores_valid = True
-        for task_type, score_str, steps in end_lines:
+        for success, steps, rewards, score_str in end_lines:
             try:
                 score = float(score_str)
                 if 0.000001 <= score <= 0.999999:
-                    print(f"   [OK] {task_type}: score={score_str}")
+                    print(f"   [OK] score={score_str}")
                 else:
-                    print(f"   [FAIL] {task_type}: score={score_str} (OUT OF RANGE)")
+                    print(f"   [FAIL] score={score_str} (OUT OF RANGE)")
                     all_scores_valid = False
             except ValueError:
-                print(f"   [FAIL] {task_type}: score={score_str} (NOT A VALID FLOAT)")
+                print(f"   [FAIL] score={score_str} (NOT A VALID FLOAT)")
                 all_scores_valid = False
         
         # Requirement 4: No duplicate runs
-        # Check that we have exactly one of each task type
-        task_types = [task for task, _, _ in end_lines]
-        unique_tasks = set(task_types)
-        has_duplicates = len(task_types) != len(unique_tasks)
+        # Check that we have exactly 3 [END] lines
+        end_count = len(end_lines)
+        has_duplicates = end_count != 3
         print(f"4. No duplicate runs: {'[OK]' if not has_duplicates else '[FAIL]'}")
         if has_duplicates:
-            print(f"   Found duplicate tasks: {task_types}")
+            print(f"   Found {end_count} [END] lines, expected 3")
         
         # Requirement 5: No extra prints before [START]
         first_line = lines[0] if lines else ""

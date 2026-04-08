@@ -268,7 +268,8 @@ def run_task(task_type: str, seed: int) -> float:
         success = "true" if (classification_correct and priority_correct) else "false"
     
     # ALWAYS print [END] even on errors
-    print(f"[END] success={success} steps={steps} rewards={rewards_str}", flush=True)
+    # Format score with 6 decimal places to avoid rounding to 1.000000
+    print(f"[END] success={success} steps={steps} rewards={rewards_str} score={score:.6f}", flush=True)
     
     return score
 
