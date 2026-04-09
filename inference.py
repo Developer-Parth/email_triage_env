@@ -15,7 +15,6 @@ Output format (OpenEnv benchmark compliant):
 
 import os
 import sys
-import time
 from typing import Any, Dict
 
 from openai import OpenAI
@@ -54,7 +53,7 @@ class MinimalAgent:
     """Minimal agent that uses LLM only (no fallback)."""
     
     def __init__(self):
-        pass
+        self._hard_plans: Dict[str, Dict[str, Any]] = {}
     
     def act(self, observation: Observation | Dict[str, Any], task_type: str = "easy") -> Action:
         """Get action from LLM based on observation and task type."""
@@ -68,15 +67,15 @@ class MinimalAgent:
         # Build prompt based on task type
         if task_type == "easy":
             system_prompt = """You are an email classification assistant. Classify the email into one of these categories:
-            personal, work, spam, newsletter, promotion. Respond ONLY with the category name."""
+            personal, work, spam. Respond ONLY with the category name."""
             user_prompt = f"Email: {email_text}\nCategory:"
         elif task_type == "medium":
             system_prompt = """You are an email prioritization assistant. Prioritize the email into one of these levels:
-            low, medium, high, urgent. Respond ONLY with the priority level."""
+            low, medium, high. Respond ONLY with the priority level."""
             user_prompt = f"Email: {email_text}\nPriority:"
         else:  # hard
-            system_prompt = """You are an email triage assistant. First classify the email (personal, work, spam, newsletter, promotion),
-            then prioritize it (low, medium, high, urgent), then write a brief reply.
+            system_prompt = """You are an email triage assistant. First classify the email (personal, work, spam),
+            then prioritize it (low, medium, high), then write a brief reply.
             Respond in this exact format: "Category: X\nPriority: Y\nReply: Z" """
             user_prompt = f"Email: {email_text}\nResponse:"
         
@@ -101,7 +100,7 @@ class MinimalAgent:
                 priority = self._parse_priority(action_text)
                 return Action(action_type="prioritize", level=priority)
             else:  # hard
-                return self._parse_full_action(action_text)
+                return self._next_hard_action(obs_dict, action_text)
                 
         except Exception as e:
             # On any error, return a safe default action
@@ -110,10 +109,7 @@ class MinimalAgent:
             elif task_type == "medium":
                 return Action(action_type="prioritize", level=PriorityLevel.MEDIUM)
             else:
-                return Action(
-                    action_type="reply",
-                    text="Thank you for your email. I will review it and get back to you."
-                )
+                return self._next_hard_action(obs_dict, None)
     
     def _parse_category(self, text: str) -> EmailCategory:
         """Parse category from text."""
@@ -131,9 +127,9 @@ class MinimalAgent:
                 return priority
         return PriorityLevel.MEDIUM
     
-    def _parse_full_action(self, text: str) -> Action:
-        """Parse full action (category, priority, reply) from text."""
-        lines = text.split('\n')
+    def _parse_full_action(self, text: str | None) -> Dict[str, Any]:
+        """Parse full hard-task plan from model output."""
+        lines = (text or "").split('\n')
         category = EmailCategory.PERSONAL
         priority = PriorityLevel.MEDIUM
         reply = "Thank you for your email. I will review it and get back to you."
@@ -152,11 +148,28 @@ class MinimalAgent:
                         break
             elif line_lower.startswith('reply:'):
                 reply = line[6:].strip()
-        
-        # For hard task, we need to decide which action to take based on state
-        # We'll start with classify, then prioritize, then reply
-        # This is simplified - in reality we'd track state
-        return Action(action_type="classify", label=category)
+
+        return {
+            "category": category,
+            "priority": priority,
+            "reply": reply or "Thank you for your email. I will review it and get back to you."
+        }
+
+    def _next_hard_action(self, obs_dict: Dict[str, Any], action_text: str | None) -> Action:
+        """Choose the next hard-task action based on prior steps for this email."""
+        email_id = obs_dict.get("email_id", "unknown")
+        if email_id not in self._hard_plans or action_text is not None:
+            self._hard_plans[email_id] = self._parse_full_action(action_text or "")
+
+        plan = self._hard_plans[email_id]
+        history = obs_dict.get("history") or []
+        action_types = [item.get("action_type") for item in history]
+
+        if "classify" not in action_types:
+            return Action(action_type="classify", label=plan["category"])
+        if "prioritize" not in action_types:
+            return Action(action_type="prioritize", level=plan["priority"])
+        return Action(action_type="reply", text=plan["reply"])
 
 
 def run_task(task_type: str, seed: int) -> float:
