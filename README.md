@@ -123,14 +123,14 @@ Invalid or malformed actions are penalized.
 Classification only.
 
 - goal: choose the correct email category
-- grader: `0.999999` if classification is correct, else `0.000001`
+- grader: `0.999` if classification is correct, else `0.001`
 
 ### Medium Task
 
 Prioritization only.
 
 - goal: choose the correct urgency level
-- grader: `0.999999` if priority is correct, else `0.000001`
+- grader: `0.999` if priority is correct, else `0.001`
 
 ### Hard Task
 

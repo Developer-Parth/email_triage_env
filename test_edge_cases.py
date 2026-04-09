@@ -29,14 +29,14 @@ def test_easy_grader():
     score = grader.grade(result)
     print(f"  Correct classification score: {score}")
     assert 0 < score < 1, f"Score {score} not strictly between 0 and 1"
-    assert score == 0.999999, f"Expected 0.999999, got {score}"
+    assert score == 0.999, f"Expected 0.999, got {score}"
     
     # Test incorrect classification
     result.classification_correct = False
     score = grader.grade(result)
     print(f"  Incorrect classification score: {score}")
     assert 0 < score < 1, f"Score {score} not strictly between 0 and 1"
-    assert score == 0.000001, f"Expected 0.000001, got {score}"
+    assert score == 0.001, f"Expected 0.001, got {score}"
     
     print("  PASS")
 
@@ -61,14 +61,14 @@ def test_medium_grader():
     score = grader.grade(result)
     print(f"  Correct priority score: {score}")
     assert 0 < score < 1, f"Score {score} not strictly between 0 and 1"
-    assert score == 0.999999, f"Expected 0.999999, got {score}"
+    assert score == 0.999, f"Expected 0.999, got {score}"
     
     # Test incorrect priority
     result.priority_correct = False
     score = grader.grade(result)
     print(f"  Incorrect priority score: {score}")
     assert 0 < score < 1, f"Score {score} not strictly between 0 and 1"
-    assert score == 0.000001, f"Expected 0.000001, got {score}"
+    assert score == 0.001, f"Expected 0.001, got {score}"
     
     print("  PASS")
 
@@ -77,7 +77,7 @@ def test_hard_grader():
     print("Testing HardTaskGrader...")
     grader = HardTaskGrader()
     
-    # Test both correct (should return 0.999999 due to clamp)
+    # Test both correct (should return 0.999 due to clamp)
     result = EpisodeResult(
         task_type="hard",
         total_reward=0.0,
@@ -94,15 +94,15 @@ def test_hard_grader():
     print(f"  Both correct score: {score}")
     assert 0 < score < 1, f"Score {score} not strictly between 0 and 1"
     # Allow small floating point tolerance
-    assert abs(score - 0.999999) < 0.0000001, f"Expected ~0.999999, got {score}"
+    assert abs(score - 0.999) < 0.0001, f"Expected ~0.999, got {score}"
     
-    # Test both incorrect (should return 0.000001 due to clamp)
+    # Test both incorrect (should return 0.001 due to clamp)
     result.classification_correct = False
     result.priority_correct = False
     score = grader.grade(result)
     print(f"  Both incorrect score: {score}")
     assert 0 < score < 1, f"Score {score} not strictly between 0 and 1"
-    assert score == 0.000001, f"Expected 0.000001, got {score}"
+    assert score == 0.001, f"Expected 0.001, got {score}"
     
     # Test mixed (classification correct, priority incorrect)
     result.classification_correct = True

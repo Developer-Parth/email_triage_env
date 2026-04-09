@@ -68,7 +68,7 @@ tasks:
     difficulty: easy
     grader:
       type: deterministic
-      scoring: "score is clamped to the strict open interval (0, 1): 0.999999 if correct, 0.000001 otherwise"
+      scoring: "score is clamped to the strict open interval (0, 1): 0.999 if correct, 0.001 otherwise"
 
   medium:
     name: Prioritization Only
@@ -76,7 +76,7 @@ tasks:
     difficulty: medium
     grader:
       type: deterministic
-      scoring: "score is clamped to the strict open interval (0, 1): 0.999999 if correct, 0.000001 otherwise"
+      scoring: "score is clamped to the strict open interval (0, 1): 0.999 if correct, 0.001 otherwise"
 
   hard:
     name: Full Triage

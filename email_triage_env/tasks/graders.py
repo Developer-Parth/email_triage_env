@@ -9,8 +9,8 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from ..models import EmailCategory, PriorityLevel
 
-MIN_SCORE = 0.000001
-MAX_SCORE = 0.999999
+MIN_SCORE = 0.001
+MAX_SCORE = 0.999
 
 
 def clamp_task_score(score: float) -> float:
