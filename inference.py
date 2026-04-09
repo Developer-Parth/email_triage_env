@@ -22,7 +22,7 @@ from openai import OpenAI
 
 from email_triage_env.environment import EmailTriageEnv
 from email_triage_env.models import Action, EmailCategory, Observation, PriorityLevel
-from email_triage_env.tasks.graders import TaskEvaluator, EpisodeResult
+from email_triage_env.tasks.graders import TaskEvaluator, EpisodeResult, clamp_task_score
 
 # REQUIRED ENVIRONMENT VARIABLES
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
@@ -236,20 +236,11 @@ def run_task(task_type: str, seed: int) -> float:
             action_history=state.action_history if state else []
         )
         
-        score = grader.grade(episode_result)
-        
-        # Strict clamp to ensure score is between 0.000001 and 0.999999
-        score = max(min(score, 0.999999), 0.000001)
-        
-        # Final safety clamp
-        if score >= 0.999999:
-            score = 0.999999
-        if score <= 0.000001:
-            score = 0.000001
+        score = clamp_task_score(grader.grade(episode_result))
             
     except Exception as e:
         # On any error, use minimum score
-        score = 0.000001
+        score = clamp_task_score(0.0)
         # Keep actual steps taken (could be 0 if error occurred before any step)
         # Error details go to stderr, not stdout
         print(f"Error in task {task_type}: {e}", file=sys.stderr)

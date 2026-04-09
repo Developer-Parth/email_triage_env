@@ -201,7 +201,7 @@ class TaskEvaluator:
         
         # Get score from grader
         grader = self.graders[task_type]
-        score = grader.grade(episode_result)
+        score = clamp_task_score(grader.grade(episode_result))
         
         return {
             "task_type": task_type,
@@ -237,14 +237,14 @@ class TaskEvaluator:
         
         # Calculate average score
         scores = [results[task]["score"] for task in results]
-        avg_score = sum(scores) / len(scores)
+        avg_score = clamp_task_score(sum(scores) / len(scores))
         
         return {
             "task_results": results,
             "average_score": avg_score,
             "scores": {
-                "easy": results["easy"]["score"],
-                "medium": results["medium"]["score"],
-                "hard": results["hard"]["score"]
+                "easy": clamp_task_score(results["easy"]["score"]),
+                "medium": clamp_task_score(results["medium"]["score"]),
+                "hard": clamp_task_score(results["hard"]["score"])
             }
         }
