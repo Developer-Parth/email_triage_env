@@ -25,23 +25,15 @@ def test_with_seed(seed_offset):
     stdout = result.stdout
     stderr = result.stderr
     
-    # Check for problematic scores
+    # Check for malformed [END] lines
     problematic = False
     lines = (stdout + "\n" + stderr).split('\n')
     
     for line in lines:
-        # Look for score= patterns
-        if 'score=' in line:
-            match = re.search(r'score=([\d.]+)', line)
-            if match:
-                score_str = match.group(1)
-                try:
-                    score = float(score_str)
-                    if score <= 0 or score >= 1:
-                        print(f"  ERROR: Line: {line.strip()} - Score {score} NOT strictly between 0 and 1")
-                        problematic = True
-                except ValueError:
-                    pass
+        if line.startswith("[END]"):
+            if not re.match(r'^\[END\] success=(true|false) steps=\d+ rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line.strip()):
+                print(f"  ERROR: Invalid [END] line: {line.strip()}")
+                problematic = True
     
     return not problematic
 

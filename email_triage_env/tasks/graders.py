@@ -1,12 +1,21 @@
 """
 Deterministic graders for Email Triage tasks.
 
-Each grader produces a score between 0.0 and 1.0 based on agent performance.
+Each grader produces a score strictly between 0.0 and 1.0 based on agent
+performance.
 """
 
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from ..models import EmailCategory, PriorityLevel
+
+MIN_SCORE = 0.000001
+MAX_SCORE = 0.999999
+
+
+def clamp_task_score(score: float) -> float:
+    """Clamp task scores into the strict open interval (0, 1)."""
+    return max(min(score, MAX_SCORE), MIN_SCORE)
 
 
 @dataclass
@@ -32,13 +41,13 @@ class BaseGrader:
     
     def grade(self, episode_result: EpisodeResult) -> float:
         """
-        Grade an episode and return score between 0.0 and 1.0.
+        Grade an episode and return a score strictly between 0.0 and 1.0.
         
         Args:
             episode_result: Result of the completed episode
             
         Returns:
-            Score between 0.0 and 1.0
+            Score strictly between 0.0 and 1.0
         """
         raise NotImplementedError
 
@@ -51,18 +60,16 @@ class EasyTaskGrader(BaseGrader):
     
     def grade(self, episode_result: EpisodeResult) -> float:
         """
-        Score = 1.0 if classification is correct, else 0.0
-        Clamped to be strictly between 0 and 1 for validator requirements.
+        Score is clamped into the strict open interval (0, 1).
         
         Args:
             episode_result: Must contain classification_correct field
             
         Returns:
-            0.999999 if correct classification, 0.000001 otherwise
+            MAX_SCORE if correct classification, MIN_SCORE otherwise
         """
-        if episode_result.classification_correct:
-            return 0.999999
-        return 0.000001
+        raw_score = 1.0 if episode_result.classification_correct else 0.0
+        return clamp_task_score(raw_score)
 
 
 class MediumTaskGrader(BaseGrader):
@@ -73,18 +80,16 @@ class MediumTaskGrader(BaseGrader):
     
     def grade(self, episode_result: EpisodeResult) -> float:
         """
-        Score = 1.0 if priority is correct, else 0.0
-        Clamped to be strictly between 0 and 1 for validator requirements.
+        Score is clamped into the strict open interval (0, 1).
         
         Args:
             episode_result: Must contain priority_correct field
             
         Returns:
-            0.999999 if correct priority, 0.000001 otherwise
+            MAX_SCORE if correct priority, MIN_SCORE otherwise
         """
-        if episode_result.priority_correct:
-            return 0.999999
-        return 0.000001
+        raw_score = 1.0 if episode_result.priority_correct else 0.0
+        return clamp_task_score(raw_score)
 
 
 class HardTaskGrader(BaseGrader):
@@ -100,7 +105,7 @@ class HardTaskGrader(BaseGrader):
         - Priority: 0.4 weight
         
         Final score = (0.6 × classification correctness) + (0.4 × priority correctness)
-        Clamped to be strictly between 0 and 1 for validator requirements.
+        Final score is clamped into the strict open interval (0, 1).
         
         Args:
             episode_result: Must contain classification_correct and priority_correct fields
@@ -108,16 +113,12 @@ class HardTaskGrader(BaseGrader):
         Returns:
             Weighted score strictly between 0.0 and 1.0
         """
-        # Use 0.999999 for correct, 0.000001 for incorrect to ensure scores are strictly between 0 and 1
-        classification_score = 0.999999 if episode_result.classification_correct else 0.000001
-        priority_score = 0.999999 if episode_result.priority_correct else 0.000001
+        classification_score = 1.0 if episode_result.classification_correct else 0.0
+        priority_score = 1.0 if episode_result.priority_correct else 0.0
         
         weighted_score = (0.6 * classification_score) + (0.4 * priority_score)
         
-        # Final clamp to ensure strictly between 0 and 1
-        # Use max(min(score, 0.999999), 1e-6) for consistency with other graders
-        weighted_score = max(min(weighted_score, 0.999999), 1e-6)
-        return weighted_score
+        return clamp_task_score(weighted_score)
 
 
 class TaskEvaluator:

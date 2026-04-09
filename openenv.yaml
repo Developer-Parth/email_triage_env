@@ -68,7 +68,7 @@ tasks:
     difficulty: easy
     grader:
       type: deterministic
-      scoring: "1.0 if classification is correct, else 0.0"
+      scoring: "score is clamped to the strict open interval (0, 1): 0.999999 if correct, 0.000001 otherwise"
 
   medium:
     name: Prioritization Only
@@ -76,7 +76,7 @@ tasks:
     difficulty: medium
     grader:
       type: deterministic
-      scoring: "1.0 if priority is correct, else 0.0"
+      scoring: "score is clamped to the strict open interval (0, 1): 0.999999 if correct, 0.000001 otherwise"
 
   hard:
     name: Full Triage
@@ -84,12 +84,12 @@ tasks:
     difficulty: hard
     grader:
       type: deterministic
-      scoring: "0.6 * classification_correct + 0.4 * priority_correct"
+      scoring: "score is clamped to the strict open interval (0, 1) after applying 0.6 * classification_correct + 0.4 * priority_correct"
 
 reward_function:
   summary:
     - Dense shaping is provided during the episode for partial progress.
-    - Final task scores are deterministic and normalized to 0.0-1.0 by the graders.
+    - Final task scores are deterministic and clamped to the strict open interval (0, 1) by the graders.
   components:
     classification:
       description: Difficulty-scaled reward for correct or incorrect category assignment

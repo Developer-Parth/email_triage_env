@@ -59,26 +59,16 @@ def analyze_output(stdout):
     print("\n=== PATTERN CHECKS ===")
     issues = []
     
-    # Extract only [END] lines for score checking
+    # Extract only [END] lines for schema checking
     end_lines = [line for line in lines if line.startswith('[END]')]
     
-    # Check for exactly 1.0 or 0.0 in scores using regex to avoid substring matches
+    # Check that [END] lines match the required schema exactly
     for line in end_lines:
-        # Extract score value using regex
-        score_match = re.search(r'score=([\d\.]+)', line)
-        if score_match:
-            score_str = score_match.group(1)
-            # Check if score is exactly 1.0 or 0.0 (allowing for any number of decimal places)
-            if score_str == '1' or score_str == '1.0' or score_str == '1.000000' or score_str.startswith('1.') and all(c == '0' for c in score_str[2:]):
-                print(f"ERROR: Found score exactly 1.0: {line}")
-                issues.append(("Score exactly 1.0", line))
-            elif score_str == '0' or score_str == '0.0' or score_str == '0.000000' or score_str.startswith('0.') and all(c == '0' for c in score_str[2:]):
-                print(f"ERROR: Found score exactly 0.0: {line}")
-                issues.append(("Score exactly 0.0", line))
-            else:
-                print(f"OK: No exact 1.0 or 0.0 in: {line}")
+        if re.match(r'^\[END\] success=(true|false) steps=\d+ rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line):
+            print(f"OK: Valid [END] line: {line}")
         else:
-            print(f"WARNING: No score found in line: {line}")
+            print(f"ERROR: Invalid [END] line: {line}")
+            issues.append(("Invalid [END] line", line))
     
     # Check for scientific notation in entire output
     scientific_pattern = r'[0-9]+\.[0-9]+e[+-][0-9]+'
@@ -90,27 +80,8 @@ def analyze_output(stdout):
     else:
         print("OK: No scientific notation")
     
-    # Check score values - using proper range (0.000001 to 0.999999 inclusive)
-    print("\n=== SCORE VALUES ===")
-    # New format: [END] success={true|false} steps={n} rewards={r1,r2,...} score={score}
-    end_pattern = r'\[END\] success=(true|false) steps=(\d+) rewards=([\d\.,\-]+) score=([\d\.]+)'
-    end_matches = re.findall(end_pattern, stdout)
-    
-    for success, steps, rewards, score_str in end_matches:
-        try:
-            score = float(score_str)
-            # Valid range is 0.000001 <= score <= 0.999999
-            if score < 0.000001:
-                print(f"ERROR: success={success} score={score_str} is less than 0.000001")
-                issues.append(("Score too small", f"success={success}: {score_str}"))
-            elif score > 0.999999:
-                print(f"ERROR: success={success} score={score_str} is greater than 0.999999")
-                issues.append(("Score too large", f"success={success}: {score_str}"))
-            else:
-                print(f"OK: success={success} score={score_str} is within valid range [0.000001, 0.999999]")
-        except ValueError:
-            print(f"ERROR: success={success} score={score_str} is not a valid float")
-            issues.append(("Invalid float", f"success={success}: {score_str}"))
+    print("\n=== END SCHEMA ===")
+    print("OK: [END] validation is schema-based; task scores are validated through graders, not stdout.")
     
     # Check for extra content
     print("\n=== LINE VALIDATION ===")
@@ -149,7 +120,7 @@ def main():
         print("\nFinal output meets all requirements:")
         print("1. Exactly 3 [START] blocks [OK]")
         print("2. Exactly 3 [END] blocks [OK]")
-        print("3. All scores between 0.000001 and 0.999999 [OK]")
+        print("3. All [END] lines match the required schema [OK]")
         print("4. No duplicate runs [OK]")
         print("5. No extra prints before [START] [OK]")
         print("6. No scientific notation [OK]")

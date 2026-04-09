@@ -29,7 +29,7 @@ A benchmark environment for evaluating LLM agents on multi-step email triage tas
 - 3 tasks (easy → medium → hard)
 - structured actions and observations
 - reward-based learning signals
-- deterministic grading (0.0–1.0)
+- deterministic grading in the strict open interval `(0, 1)`
 - deployable via Docker on Hugging Face Spaces
 - fully OpenEnv compliant
 
@@ -73,7 +73,7 @@ For each episode, the agent sees one email and must make structured decisions:
 Performance is measured two ways:
 
 - dense step rewards during interaction
-- final deterministic grader scores between `0.0` and `1.0`
+- final deterministic grader scores strictly between `0.0` and `1.0`
 
 ### State
 
@@ -123,14 +123,14 @@ Invalid or malformed actions are penalized.
 Classification only.
 
 - goal: choose the correct email category
-- grader: `1.0` if classification is correct, else `0.0`
+- grader: `0.999999` if classification is correct, else `0.000001`
 
 ### Medium Task
 
 Prioritization only.
 
 - goal: choose the correct urgency level
-- grader: `1.0` if priority is correct, else `0.0`
+- grader: `0.999999` if priority is correct, else `0.000001`
 
 ### Hard Task
 
@@ -159,7 +159,7 @@ Benchmark extensions:
 - consistency penalties for erratic behavior
 - difficulty-scaled rewards to make ambiguous emails more informative
 
-This gives a better learning signal for agent training while the final graders still produce simple deterministic scores in the `0.0` to `1.0` range.
+This gives a better learning signal for agent training while the final graders still produce simple deterministic scores strictly inside the `(0, 1)` range.
 
 ## Dataset
 

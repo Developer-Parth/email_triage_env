@@ -44,18 +44,9 @@ def test_format():
         return False
     
     for line in end_lines:
-        if not re.match(r'^\[END\] success=(true|false) steps=\d+ rewards=(-?\d+\.\d{2},?)+ score=0\.\d{6}$', line):
+        if not re.match(r'^\[END\] success=(true|false) steps=\d+ rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line):
             print(f"FAIL: Invalid [END] line: {line}")
             return False
-    
-    # Check score ranges
-    for line in end_lines:
-        score_match = re.search(r'score=([\d\.]+)', line)
-        if score_match:
-            score = float(score_match.group(1))
-            if not (0.000001 <= score <= 0.999999):
-                print(f"FAIL: Score out of range: {score} in line: {line}")
-                return False
     
     print("PASS: All format checks passed")
     return True

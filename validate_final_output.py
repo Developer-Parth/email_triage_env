@@ -42,24 +42,16 @@ def validate_output():
         end_count = len(end_matches)
         print(f"2. Exactly 3 [END] blocks: {end_count} {'[OK]' if end_count == 3 else '[FAIL]'}")
         
-        # Requirement 3: Each [END] has score between 0.000001 and 0.999999
-        # New format: [END] success={true|false} steps={n} rewards={r1,r2,...} score={score}
-        end_pattern = r'\[END\] success=(true|false) steps=(\d+) rewards=([\d\.,\-]+) score=([\d\.]+)'
-        end_lines = re.findall(end_pattern, stdout)
+        # Requirement 3: Each [END] matches the strict required schema
+        end_pattern = r'^\[END\] success=(true|false) steps=(\d+) rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$'
+        end_lines = [line for line in lines if re.match(end_pattern, line)]
         
-        print(f"3. Each [END] score between 0.000001 and 0.999999:")
-        all_scores_valid = True
-        for success, steps, rewards, score_str in end_lines:
-            try:
-                score = float(score_str)
-                if 0.000001 <= score <= 0.999999:
-                    print(f"   [OK] score={score_str}")
-                else:
-                    print(f"   [FAIL] score={score_str} (OUT OF RANGE)")
-                    all_scores_valid = False
-            except ValueError:
-                print(f"   [FAIL] score={score_str} (NOT A VALID FLOAT)")
-                all_scores_valid = False
+        print(f"3. Each [END] matches the required schema:")
+        all_end_lines_valid = len(end_lines) == 3
+        if all_end_lines_valid:
+            print("   [OK] All [END] lines match the required format")
+        else:
+            print("   [FAIL] One or more [END] lines do not match the required format")
         
         # Requirement 4: No duplicate runs
         # Check that we have exactly 3 [END] lines
@@ -109,7 +101,7 @@ def validate_output():
         all_passed = (
             start_count == 3 and
             end_count == 3 and
-            all_scores_valid and
+            all_end_lines_valid and
             not has_duplicates and
             not has_extra_before_start and
             not has_scientific and
