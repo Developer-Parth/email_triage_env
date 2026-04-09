@@ -22,7 +22,7 @@ def run_inference_and_check():
         output = result.stdout + result.stderr
         
         # Find all [END] lines using the strict required schema
-        pattern = r'^\[END\] success=(true|false) steps=(\d+) rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$'
+        pattern = r'^\[END\] success=(true|false) steps=(\d+) score=(\d+\.\d{3}) rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$'
         matches = re.findall(pattern, output, flags=re.MULTILINE)
         
         if not matches:
@@ -32,8 +32,8 @@ def run_inference_and_check():
         print(f"Found {len(matches)} task results:")
         
         all_valid = len(matches) == 3
-        for success, steps, rewards, _ in matches:
-            print(f"  [OK] success={success}: steps={steps} rewards={rewards}")
+        for success, steps, score, rewards, _ in matches:
+            print(f"  [OK] success={success}: steps={steps} score={score} rewards={rewards}")
         
         return all_valid
         

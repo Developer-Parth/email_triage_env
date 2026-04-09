@@ -64,7 +64,7 @@ def analyze_output(stdout):
     
     # Check that [END] lines match the required schema exactly
     for line in end_lines:
-        if re.match(r'^\[END\] success=(true|false) steps=\d+ rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line):
+        if re.match(r'^\[END\] success=(true|false) steps=\d+ score=\d+\.\d{3} rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line):
             print(f"OK: Valid [END] line: {line}")
         else:
             print(f"ERROR: Invalid [END] line: {line}")

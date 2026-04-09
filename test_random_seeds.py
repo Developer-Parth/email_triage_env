@@ -31,7 +31,7 @@ def test_with_seed(seed_offset):
     
     for line in lines:
         if line.startswith("[END]"):
-            if not re.match(r'^\[END\] success=(true|false) steps=\d+ rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line.strip()):
+            if not re.match(r'^\[END\] success=(true|false) steps=\d+ score=\d+\.\d{3} rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line.strip()):
                 print(f"  ERROR: Invalid [END] line: {line.strip()}")
                 problematic = True
     

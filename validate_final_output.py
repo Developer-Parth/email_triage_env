@@ -43,7 +43,7 @@ def validate_output():
         print(f"2. Exactly 3 [END] blocks: {end_count} {'[OK]' if end_count == 3 else '[FAIL]'}")
         
         # Requirement 3: Each [END] matches the strict required schema
-        end_pattern = r'^\[END\] success=(true|false) steps=(\d+) rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$'
+        end_pattern = r'^\[END\] success=(true|false) steps=(\d+) score=(\d+\.\d{3}) rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$'
         end_lines = [line for line in lines if re.match(end_pattern, line)]
         
         print(f"3. Each [END] matches the required schema:")

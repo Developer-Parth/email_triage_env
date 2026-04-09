@@ -44,7 +44,7 @@ def test_format():
         return False
     
     for line in end_lines:
-        if not re.match(r'^\[END\] success=(true|false) steps=\d+ rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line):
+        if not re.match(r'^\[END\] success=(true|false) steps=\d+ score=\d+\.\d{3} rewards=(-?\d+\.\d{2}(,-?\d+\.\d{2})*|)$', line):
             print(f"FAIL: Invalid [END] line: {line}")
             return False
     

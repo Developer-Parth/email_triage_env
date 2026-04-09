@@ -10,7 +10,7 @@ Expected environment variables:
 Output format (OpenEnv benchmark compliant):
 [START] task={task_name} env={benchmark_name} model={model_name}
 [STEP] step={n} action={action_str} reward={0.00} done={true|false} error={msg|null}
-[END] success={true|false} steps={n} rewards={r1,r2,...}
+[END] success={true|false} steps={n} score={score} rewards={r1,r2,...}
 """
 
 import os
@@ -278,7 +278,7 @@ def run_task(task_type: str, seed: int) -> float:
         success = "true" if (classification_correct and priority_correct) else "false"
     
     # ALWAYS print [END] even on errors
-    print(f"[END] success={success} steps={steps} rewards={rewards_str}", flush=True)
+    print(f"[END] success={success} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
     
     return score
 
