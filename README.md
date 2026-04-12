@@ -24,16 +24,16 @@ This project was built as part of the **Scaler March 2026 Hackathon**.
 
 ## ⚡ TL;DR
 
-A benchmark environment for evaluating LLM agents on multi-step email triage tasks.
+A deterministic benchmark that tests whether LLM agents can make consistent, multi-step decisions under ambiguity, not just classify emails correctly.
 
-- 3 tasks (easy → medium → hard)
-- structured actions and observations
-- reward-based learning signals
-- deterministic grading in the strict open interval `(0, 1)`
-- deployable via Docker on Hugging Face Spaces
-- fully OpenEnv compliant
+- enforces action sequencing and dependency constraints
+- penalizes redundant or inconsistent behavior
+- rewards efficient, correct decision-making
+- designed to expose shallow or exploitative strategies
 
 ---
+
+This benchmark is designed to test decision quality, not just accuracy.
 
 > Designed to evaluate multi-step reasoning and decision consistency in LLM agents under real-world ambiguity.
 >
@@ -43,22 +43,31 @@ This environment models a real-world productivity task: triaging incoming email.
 
 ## Overview
 
-This project is designed for OpenEnv-style agent evaluation with:
+This is an OpenEnv-compatible benchmark for evaluating LLM agents on real-world, multi-step decision tasks.
 
-- a real-world task instead of a toy problem
-- typed `Observation`, `Action`, `Reward`, and `State` models
-- `step()`, `reset()`, and `state()` APIs
-- three tasks with deterministic graders
+**Key characteristics:**
+- real-world task (email triage)
+- structured Observation / Action / Reward / State models
+- step-based interaction loop (`reset → step → done`)
+- deterministic grading across three difficulty levels
 - dense reward shaping for partial progress
-- a reproducible baseline `inference.py`
-- a FastAPI server and Dockerfile for deployment
+- fully deployable via FastAPI + Docker
 
-The environment models a practical workflow humans actually do:
 
-- inbox triage
-- support queue routing
-- personal assistant automation
-- lightweight productivity tooling
+## What Makes This Different
+
+Most benchmarks reward correctness.
+
+This environment evaluates behavior.
+
+It enforces:
+- step-by-step reasoning instead of one-shot answers
+- penalties for redundant or repeated actions
+- consistency constraints across decisions
+- efficiency through step costs
+- memory of past mistakes affecting future reward
+
+As a result, naive strategies (random guessing, repetition, late correction) fail to achieve high scores.
 
 ## Environment Specification
 
@@ -340,14 +349,17 @@ Built, debugged, and deployed under hackathon constraints.
 - GitHub Repository: https://github.com/Developer-Parth/email_triage_env
 - Hugging Face Space: https://huggingface.co/spaces/Developer-Parth/email_triage_env
 
-## Why This Environment Fits The Problem Statement
+## Why This Stands Out
 
-- real-world utility: email triage is a practical daily workflow
-- three tasks with deterministic graders: easy, medium, hard
-- meaningful reward shaping: partial progress, sequencing, and undesirable-action penalties
-- OpenEnv-compatible API and typed models
-- baseline inference script included at repo root
-- containerization included for deployment
+Unlike typical benchmarks, this environment:
+
+- evaluates sequential decision-making, not just single-step accuracy
+- penalizes redundant or inefficient actions
+- enforces consistency across multiple steps
+- introduces memory of past mistakes into future rewards
+- exposes shallow strategies like guessing, repetition, or late correction
+
+As a result, agents must behave intelligently across the full interaction, not just produce correct final answers.
 
 ## Extensibility
 
